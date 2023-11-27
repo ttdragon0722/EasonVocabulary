@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背單字啦</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.1.js"
+        integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI=" crossorigin="anonymous"></script>
+
+    <script src="localstorage.js"></script>
+</head>
+
+<body>
+    <!-- app -->
+    <div class="app relative w-full h-screen bg-[#0f172a] text-white flex justify-center">
+        <!-- view -->
+        <div class="view min-w-[320px] max-w-[425px] w-full h-screen ">
+            <!-- panel -->
+            <div class="panel flex w-full h-full justify-center align-center flex-col text-center">
+                <!-- output-panel -->
+                <div class="output-panel font-bold text-4xl">
+                    hahaha
+                </div>
+                <!-- answer-panel -->
+                <div class="answer-panel text-lg hidden">
+                    (n.) chinese
+                </div>
+            </div>
+        </div>
+
+        <!-- function -->
+        <div class="inline-flex fixed absolute bottom-5 right-3">
+            <button
+                class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded-l">
+                Prev
+            </button>
+            <button
+                class="next-btn bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded-r">
+                Next
+            </button>
+
+        </div>
+
+
+        <div class="inline-flex fixed absolute bottom-5 left-3">
+            <button class="hint-btn bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">
+                <i class="fa-solid fa-lightbulb"></i>
+            </button>
+            <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">
+                <i class="fa-solid fa-star"></i>
+            </button>
+            <script>
+                $(".hint-btn").click(function (e) {
+                    e.preventDefault();
+                    $('.answer-panel').toggle();
+                });
+            </script>
+        </div>
+
+        <button
+            class="menu-switch absolute top-5 left-3 text-2xl leading-5 font-semibold bg-slate-400/10 rounded-full py-3 px-3 flex items-center space-x-2 hover:bg-slate-400/20 dark:highlight-white/5">
+            <i class="fa-solid fa-hamburger"></i>
+        </button>
+
+        <!-- title  -->
+        <div class="sheetName absolute top-5 right-3 text-sm font-bold text-gray-500">
+            hahah
+        </div>
+
+        <!-- panel -->
+        <div class="menu absolute bg-white w-full h-[80vh] bottom-0 rounded-l rounded-r rounded-lg pt-3 hidden">
+            <!-- sheet choose -->
+            <div class="flex">
+                <label for="sheet-choose"
+                    class="block mb-2 font-bold text-sm font-medium text-black w-1/2 flex justify-center align-center py-2.5">選擇單字表</label>
+                <select id="sheet-choose"
+                    class="sheet-choose bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-1/2 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                </select>
+            </div>
+        </div>
+        <script>
+            let menuIsOpen = false;
+
+            // 点击按钮时切换菜单状态
+            $('.menu-switch').on('click', function () {
+                menuIsOpen = !menuIsOpen;
+                toggleMenu(menuIsOpen);
+            });
+
+            // 切换菜单显示和隐藏
+            function toggleMenu(isOpen) {
+                if (isOpen) {
+                    $('.menu').show();
+                } else {
+                    $('.menu').hide();
+                }
+            }
+        </script>
+    </div>
+
+    <script>
+        const apiUrl = '/senior_7000.xls';
+        let workbook;
+        
+        // get EXCEL資料
+        fetch(apiUrl)
+            .then(response => response.blob())
+            .then(blobData => {
+                handleExcelData(blobData);
+            })
+            .catch(error => console.error('Error fetching Excel file:', error));
+
+        function sheetLinkIndex(indexStorage, sheetStorage) {
+            if (Object.keys(indexStorage.get().indexStorage).length) {
+                // 有值
+                indexStorage.update("indexStorage", findOrCreate(indexStorage.get().indexStorage, sheetStorage.get().sheetStorage, 0));
+            } else {
+                // 無值
+                let temp = new Object();
+                temp[sheetStorage.get().sheetStorage] = 0;
+                indexStorage.update("indexStorage", temp);
+            }
+        }
+
+        function display(indexStorage, sheetStorage) {
+            const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetStorage.get().sheetStorage]);
+
+            console.log(xlData[indexStorage.get().indexStorage[sheetStorage.get().sheetStorage]]);
+
+            // todo del
+            console.log(xlData.length);
+
+            [vol, answer] = xlData[indexStorage.get().indexStorage[sheetStorage.get().sheetStorage]].vol.split("@")
+            $(".output-panel").html(vol);
+            $(".answer-panel").html(answer);
+        }
+
+        function handleExcelData(blobData) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const data = e.target.result;
+                workbook = XLSX.read(data, { type: 'binary' });
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                    console.log(`Data from ${sheetName}:`, xlData);
+
+                    $('.sheet-choose').append(`<option value="${sheetName}">${sheetName}</option>`);
+                });
+
+                let indexStorage = new setStorage("indexStorage", { "indexStorage": {} });
+                let sheetStorage = new setStorage("sheetStorage", { "sheetStorage": workbook.SheetNames[0] });
+                let savaStorage = new setStorage("saveStorage", { "saveStorage": [] });
+
+                $(".sheetName").html(sheetStorage.get().sheetStorage);
+                $("#sheet-choose").val(sheetStorage.get().sheetStorage);
+
+                sheetLinkIndex(indexStorage, sheetStorage);
+                display(indexStorage, sheetStorage);
+            };
+
+            reader.readAsBinaryString(blobData);
+        }
+
+        $(document).on("change", "#sheet-choose", function () {
+            let selectValue = $(this).val();
+            let sheetData = new setStorage("sheetStorage", { "sheetStorage": selectValue });
+            let indexStorage = new setStorage("indexStorage", { "indexStorage": {} });
+            sheetData.update("sheetStorage", selectValue);
+
+            $(".sheetName").html(sheetData.get().sheetStorage);
+
+            sheetLinkIndex(indexStorage, sheetData);
+            display(indexStorage, sheetData);
+        });
+
+        function randomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        $(document).on("click", ".next-btn",function () {
+            let indexStorage = new setStorage("indexStorage", { "indexStorage": {} });
+            let sheetData = new setStorage("sheetStorage", { "sheetStorage": "1級" });
+
+            const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetData.get().sheetStorage]);
+            // todo del
+            // todo del
+
+            indexStorage.update("indexStorage", findOrCreate(indexStorage.get().indexStorage, sheetData.get().sheetStorage, randomNumber(0,xlData.length)));
+            
+            // todo del
+            console.log(XLSX.utils.sheet_to_json(workbook.Sheets));
+            console.log("next",randomNumber(0,xlData.length));
+            display(indexStorage, sheetData);
+        });
+
+        // index storage : 
+        // {
+        //     "indexStorage":[
+        //     {
+        //         "name-1":index
+        //     }
+        // ]}
+
+        // sheet storage :
+        // {
+        //     "sheetStorage":name
+        // }
+
+        // save storage :
+        // {
+        //     "savaStorage":[
+        //         {
+        //             "english":english,
+        //             "chinese":chinese
+        //         }
+        //     ]
+        // }
+
+
+    </script>
+</body>
+
+</html>
