@@ -108,7 +108,7 @@
     <script>
         const apiUrl = '/senior_7000.xls';
         let workbook;
-        
+
         // get EXCEL資料
         fetch(apiUrl)
             .then(response => response.blob())
@@ -186,7 +186,7 @@
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        $(document).on("click", ".next-btn",function () {
+        $(document).on("click", ".next-btn", function () {
             let indexStorage = new setStorage("indexStorage", { "indexStorage": {} });
             let sheetData = new setStorage("sheetStorage", { "sheetStorage": "1級" });
 
@@ -194,12 +194,19 @@
             // todo del
             // todo del
 
-            indexStorage.update("indexStorage", findOrCreate(indexStorage.get().indexStorage, sheetData.get().sheetStorage, randomNumber(0,xlData.length)));
-            
+            indexStorage.update("indexStorage", findOrCreate(indexStorage.get().indexStorage, sheetData.get().sheetStorage, randomNumber(0, xlData.length)));
+
             // todo del
             console.log(XLSX.utils.sheet_to_json(workbook.Sheets));
-            console.log("next",randomNumber(0,xlData.length));
+            console.log("next", randomNumber(0, xlData.length));
             display(indexStorage, sheetData);
+            if ($('.answer-panel').is(':hidden')) {
+                // If hidden, show it
+                
+            } else {
+                // If visible, hide it
+                $('.answer-panel').hide();
+            }
         });
 
         // index storage : 
